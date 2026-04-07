@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./data:/app/data
+      - ~/.claude:/root/.claude:ro
+    environment:
+      - PORT=3100
+      - CLAUDE_DIR=/root/.claude
