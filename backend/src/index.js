@@ -3,6 +3,8 @@ import { serve } from '@hono/node-server'
 import { cors } from 'hono/cors'
 import { PORT } from './core/env.js'
 import workItemRoutes from './routes/work-items.js'
+import agentRunRoutes from './routes/agent-runs.js'
+import eventRoutes from './routes/events.js'
 import { startScanner, scan } from './scanner/index.js'
 import { SCAN_INTERVAL, CLAUDE_DIR } from './core/env.js'
 
@@ -13,6 +15,8 @@ app.use('/*', cors())
 app.get('/api/health', (c) => c.json({ ok: true, timestamp: Date.now() }))
 
 app.route('/api/work-items', workItemRoutes)
+app.route('/api/agent-runs', agentRunRoutes)
+app.route('/api/events', eventRoutes)
 
 // Scanner control routes
 app.post('/api/scanner/trigger', (c) => {
