@@ -37,18 +37,20 @@ app.get('/api/scanner/status', (c) => {
   return c.json({ ok: true, interval: SCAN_INTERVAL, claudeDir: CLAUDE_DIR })
 })
 
-// Serve static frontend in production
+// Serve static frontend in production (only non-API routes)
 if (existsSync(publicDir)) {
-  app.use('/*', serveStatic({ root: './public' }))
+  app.use('/assets/*', serveStatic({ root: publicDir }))
+  app.use('/favicon.ico', serveStatic({ root: publicDir }))
 
-  // SPA fallback
+  // SPA fallback for non-API routes
   app.get('*', (c) => {
+    if (c.req.path.startsWith('/api')) return c.notFound()
     const html = readFileSync(resolve(publicDir, 'index.html'), 'utf-8')
     return c.html(html)
   })
 }
 
-// Start scanner after routes are defined
+// Start scanner
 startScanner()
 
 serve({ fetch: app.fetch, port: Number(PORT) }, (info) => {

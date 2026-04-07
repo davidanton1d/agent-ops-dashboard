@@ -15,7 +15,8 @@ const fileCursors = new Map()
 
 export function startScanner() {
   console.log(`Scanner started — interval ${SCAN_INTERVAL}ms, watching ${CLAUDE_DIR}/projects/`)
-  scan()
+  // Defer first scan to not block server startup
+  setTimeout(() => scan(), 100)
   return setInterval(scan, SCAN_INTERVAL)
 }
 
