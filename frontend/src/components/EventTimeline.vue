@@ -9,11 +9,11 @@
         <i :class="['pi', iconForType(event.type)]" :style="{ color: colorForType(event.type) }"></i>
       </div>
       <div class="min-w-0 flex-1">
-        <p class="text-surface-800">{{ event.message }}</p>
-        <p class="text-xs text-surface-400 mt-0.5">{{ formatTime(event.timestamp) }}</p>
+        <p class="text-gray-800">{{ event.message }}</p>
+        <p class="text-xs text-gray-400 mt-0.5">{{ formatTime(event.timestamp) }}</p>
       </div>
     </div>
-    <p v-if="!events.length" class="text-sm text-surface-400">No events yet</p>
+    <p v-if="!events.length" class="text-sm text-gray-400">No events yet</p>
   </div>
 </template>
 

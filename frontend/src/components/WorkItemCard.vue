@@ -1,11 +1,11 @@
 <template>
   <router-link
     :to="`/work-items/${item.id}`"
-    class="block bg-surface-0 border border-surface-200 rounded-lg p-4 mb-3 no-underline text-surface-900 hover:border-primary transition-colors cursor-pointer"
+    class="block bg-white border border-gray-200 rounded-lg p-4 mb-3 no-underline text-gray-900 hover:border-blue-600 transition-colors cursor-pointer"
   >
     <div class="flex items-start justify-between mb-2">
       <h3 class="text-sm font-semibold leading-tight">{{ item.title }}</h3>
-      <span v-if="item.externalId" class="text-xs text-surface-500 ml-2 whitespace-nowrap">
+      <span v-if="item.externalId" class="text-xs text-gray-500 ml-2 whitespace-nowrap">
         {{ item.externalId }}
       </span>
     </div>
@@ -19,7 +19,7 @@
       />
     </div>
 
-    <p v-if="item.latestEvent" class="text-xs text-surface-500 truncate">
+    <p v-if="item.latestEvent" class="text-xs text-gray-500 truncate">
       {{ item.latestEvent.message }}
       <span class="ml-1">{{ timeAgo(item.latestEvent.timestamp) }}</span>
     </p>

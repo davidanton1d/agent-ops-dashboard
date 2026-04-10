@@ -11,10 +11,10 @@
           v-for="run in rogueRuns"
           :key="run.id"
           :to="`/agent-runs/${run.id}`"
-          class="bg-white border border-red-200 rounded px-3 py-2 text-sm no-underline text-surface-900 hover:border-red-400"
+          class="bg-white border border-red-200 rounded px-3 py-2 text-sm no-underline text-gray-900 hover:border-red-400"
         >
           <AgentRunBadge :status="run.status" :rogue="true" />
-          <span class="ml-2 text-xs text-surface-500">{{ run.projectPath }}</span>
+          <span class="ml-2 text-xs text-gray-500">{{ run.projectPath }}</span>
         </router-link>
       </div>
     </div>
