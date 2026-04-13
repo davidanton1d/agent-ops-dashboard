@@ -8,11 +8,13 @@ import { ulid } from 'ulid'
 import { CLAUDE_DIR, SCAN_INTERVAL } from '../core/env.js'
 import { extractTicketId, extractToolUses } from './patterns.js'
 
-const IDLE_THRESHOLD_MS = 2 * 60 * 1000
-const BATCH_SIZE = 10 // Process this many files per tick to avoid blocking
+const IDLE_THRESHOLD_MS = 5 * 60 * 1000 // 5 minutes of no file changes = completed
+const BATCH_SIZE = 10
 
-// Track last-known line counts to only process new lines
+// Track file state: line count and byte size
 const fileCursors = new Map()
+// Track actual file mtime per session for accurate staleness detection
+const fileLastModified = new Map()
 
 let scanning = false
 
@@ -32,7 +34,7 @@ export async function scan() {
 
   const now = Date.now()
 
-  // Collect all JSONL files first
+  // Collect all JSONL files
   const files = []
   for (const projectSlug of projectDirs) {
     const projectPath = join(projectsDir, projectSlug)
@@ -50,7 +52,7 @@ export async function scan() {
     } catch { continue }
   }
 
-  // Process in batches, yielding between each batch
+  // Process in batches
   for (let i = 0; i < files.length; i += BATCH_SIZE) {
     const batch = files.slice(i, i + BATCH_SIZE)
     for (const { sessionId, filePath, projectSlug } of batch) {
@@ -60,7 +62,6 @@ export async function scan() {
         console.error(`Scanner error for ${sessionId}:`, err.message)
       }
     }
-    // Yield to event loop between batches
     if (i + BATCH_SIZE < files.length) {
       await new Promise(resolve => setImmediate(resolve))
     }
@@ -77,8 +78,24 @@ function processSession(sessionId, filePath, projectSlug, now) {
   const cursorKey = `${projectSlug}/${sessionId}`
   const lineCursor = fileCursors.get(cursorKey) || 0
 
-  // Quick check: skip if file hasn't grown
   const stat = statSync(filePath)
+  const fileMtime = stat.mtimeMs
+
+  // Always track file mtime for staleness detection
+  fileLastModified.set(sessionId, fileMtime)
+
+  // If file is recently modified and session was completed, re-activate it
+  if (existing && existing.status === 'completed' && (now - fileMtime) < IDLE_THRESHOLD_MS) {
+    db.update(agentRuns).set({ status: 'running', updatedAt: now })
+      .where(eq(agentRuns.id, existing.id)).run()
+    db.insert(events).values({
+      id: ulid(), workItemId: existing.workItemId, agentRunId: existing.id,
+      type: 'agent_start', message: 'Agent session resumed (file activity detected)',
+      metadata: null, timestamp: now,
+    }).run()
+  }
+
+  // Skip if file hasn't grown
   if (existing && stat.size === (fileCursors.get(cursorKey + ':size') || 0)) return
 
   const content = readFileSync(filePath, 'utf-8')
@@ -92,7 +109,6 @@ function processSession(sessionId, filePath, projectSlug, now) {
 
   let cwd = null
   let ticketId = null
-  // Only collect tool uses for new sessions (skip on first bulk scan to save DB writes)
   const isNewSession = !existing
 
   for (const line of newLines) {
@@ -108,10 +124,13 @@ function processSession(sessionId, filePath, projectSlug, now) {
   }
 
   if (isNewSession) {
+    // Determine initial status based on file recency
+    const isActive = (now - fileMtime) < IDLE_THRESHOLD_MS
     const agentRun = {
       id: ulid(), workItemId: null, sessionId,
       projectPath: cwd || '/' + projectSlug.replace(/-/g, '/'),
-      status: 'running', lastOutput: null, createdAt: now, updatedAt: now,
+      status: isActive ? 'running' : 'completed',
+      lastOutput: null, createdAt: now, updatedAt: now,
     }
     db.insert(agentRuns).values(agentRun).run()
     db.insert(events).values({
@@ -152,7 +171,10 @@ function linkToTicket(agentRunId, ticketId, now) {
 function markStaleSessionsCompleted(now) {
   const running = db.select().from(agentRuns).where(eq(agentRuns.status, 'running')).all()
   for (const run of running) {
-    if (now - run.updatedAt > IDLE_THRESHOLD_MS) {
+    const lastMtime = fileLastModified.get(run.sessionId)
+    // Use actual file mtime, not updatedAt
+    const lastActivity = lastMtime || run.updatedAt
+    if (now - lastActivity > IDLE_THRESHOLD_MS) {
       db.update(agentRuns).set({ status: 'completed', updatedAt: now })
         .where(eq(agentRuns.id, run.id)).run()
       db.insert(events).values({
