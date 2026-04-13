@@ -1,17 +1,36 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-      <router-link to="/" class="text-xl font-bold text-gray-900 no-underline">
-        Agent Ops
-      </router-link>
-      <button
-        class="px-3 py-1 bg-blue-600 text-white rounded text-sm cursor-pointer border-none"
-        @click="triggerScan"
-      >
-        <i class="pi pi-refresh mr-1"></i> Scan Now
-      </button>
+  <div class="min-h-screen" style="background: var(--bg-deep)">
+    <!-- Header -->
+    <header class="sticky top-0 z-50" style="background: rgba(10, 14, 23, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-subtle);">
+      <div class="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
+        <router-link to="/" class="flex items-center gap-3 no-underline group">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: var(--accent-cyan-dim); border: 1px solid rgba(34, 211, 238, 0.3);">
+            <i class="pi pi-bolt" style="color: var(--accent-cyan); font-size: 0.9rem;"></i>
+          </div>
+          <div>
+            <span class="text-base font-bold tracking-tight" style="font-family: var(--font-display); color: var(--text-primary);">
+              Agent Ops
+            </span>
+            <span class="ml-2 text-xs font-medium" style="font-family: var(--font-mono); color: var(--text-muted); letter-spacing: 0.05em;">
+              MISSION CONTROL
+            </span>
+          </div>
+        </router-link>
+
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2" style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted);">
+            <span class="status-dot running"></span>
+            <span>SCANNER ACTIVE</span>
+          </div>
+          <button class="ops-btn flex items-center gap-2" @click="triggerScan">
+            <i class="pi pi-refresh" style="font-size: 0.7rem;"></i>
+            <span>Scan Now</span>
+          </button>
+        </div>
+      </div>
     </header>
-    <main class="p-6">
+
+    <main class="max-w-[1600px] mx-auto px-6 py-6">
       <router-view />
     </main>
   </div>

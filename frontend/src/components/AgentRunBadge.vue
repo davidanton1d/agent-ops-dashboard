@@ -1,6 +1,8 @@
 <template>
   <span :class="['badge', badgeClass]">
-    <i :class="['pi', iconClass, 'mr-1']" style="font-size: 0.7rem"></i>
+    <span v-if="props.status === 'running' && !props.rogue" class="status-dot running" style="width:5px;height:5px;"></span>
+    <span v-else-if="props.rogue" class="status-dot rogue" style="width:5px;height:5px;"></span>
+    <i v-else :class="['pi', iconClass]" style="font-size: 0.6rem"></i>
     {{ label }}
   </span>
 </template>
@@ -16,11 +18,9 @@ const props = defineProps({
 const badgeClass = computed(() => props.rogue ? 'badge-rogue' : `badge-${props.status}`)
 
 const iconClass = computed(() => {
-  if (props.rogue) return 'pi-exclamation-triangle'
   switch (props.status) {
-    case 'running': return 'pi-spin pi-spinner'
-    case 'completed': return 'pi-check-circle'
-    case 'failed': return 'pi-times-circle'
+    case 'completed': return 'pi-check'
+    case 'failed': return 'pi-times'
     default: return 'pi-circle'
   }
 })
