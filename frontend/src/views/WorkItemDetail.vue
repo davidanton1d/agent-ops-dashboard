@@ -6,8 +6,26 @@
         <i class="pi pi-arrow-left" style="font-size: 0.7rem;"></i>
       </router-link>
       <div class="flex-1">
-        <h1 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--text-primary);">
+        <!-- Editable title -->
+        <div v-if="editingTitle" class="flex items-center gap-2">
+          <input
+            ref="titleInput"
+            v-model="editTitle"
+            type="text"
+            class="flex-1 rounded-lg px-3 py-1.5"
+            style="background: var(--bg-deep); border: 1px solid var(--accent-cyan); color: var(--text-primary); font-family: var(--font-display); font-size: 1.4rem; font-weight: 700;"
+            @keyup.enter="saveTitle"
+            @keyup.escape="cancelEditTitle"
+          />
+          <button class="ops-btn ops-btn-active" @click="saveTitle">Save</button>
+          <button class="ops-btn" @click="cancelEditTitle">Cancel</button>
+        </div>
+        <h1 v-else
+          @click="startEditTitle"
+          class="cursor-pointer group"
+          style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--text-primary);">
           {{ item.title }}
+          <i class="pi pi-pencil ml-2 opacity-0 group-hover:opacity-100 transition-opacity" style="font-size: 0.7rem; color: var(--text-muted);"></i>
         </h1>
         <div class="flex items-center gap-3 mt-1">
           <span :class="['badge', `badge-${item.status}`]">{{ item.status }}</span>
@@ -86,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApi } from '../composables/useApi.js'
 import EventTimeline from '../components/EventTimeline.vue'
@@ -95,6 +113,9 @@ import AgentRunBadge from '../components/AgentRunBadge.vue'
 const route = useRoute()
 const { get, patch } = useApi()
 const item = ref(null)
+const editingTitle = ref(false)
+const editTitle = ref('')
+const titleInput = ref(null)
 
 const detailFields = computed(() => {
   if (!item.value) return []
@@ -109,6 +130,28 @@ const detailFields = computed(() => {
 
 async function load() {
   item.value = await get(`/api/work-items/${route.params.id}`)
+}
+
+function startEditTitle() {
+  editTitle.value = item.value.title
+  editingTitle.value = true
+  nextTick(() => titleInput.value?.focus())
+}
+
+async function saveTitle() {
+  const title = editTitle.value.trim()
+  if (!title || title === item.value.title) {
+    cancelEditTitle()
+    return
+  }
+  await patch(`/api/work-items/${route.params.id}`, { title })
+  editingTitle.value = false
+  await load()
+}
+
+function cancelEditTitle() {
+  editingTitle.value = false
+  editTitle.value = ''
 }
 
 async function updateStatus(status) {

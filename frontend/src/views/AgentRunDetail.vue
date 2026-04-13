@@ -43,23 +43,51 @@
         <!-- Link to work item -->
         <div class="mt-5">
           <div class="ops-section-title">{{ run.workItemId ? 'Linked Work Item' : 'Link to Work Item' }}</div>
+
           <div v-if="run.workItemId">
             <router-link :to="`/work-items/${run.workItemId}`" class="ops-btn inline-flex items-center gap-2">
               <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
               View Work Item
             </router-link>
           </div>
-          <div v-else>
-            <select
-              class="w-full rounded-lg px-3 py-2 cursor-pointer"
-              style="background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.75rem;"
-              @change="linkToWorkItem($event.target.value)"
-            >
-              <option value="">Select work item...</option>
-              <option v-for="wi in workItems" :key="wi.id" :value="wi.id" style="background: var(--bg-panel);">
-                {{ wi.title }} {{ wi.externalId ? `(${wi.externalId})` : '' }}
-              </option>
-            </select>
+
+          <div v-else class="space-y-4">
+            <!-- Create new work item -->
+            <div class="ops-panel p-4">
+              <div style="font-family: var(--font-mono); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+                Create New
+              </div>
+              <div class="flex gap-2">
+                <input
+                  v-model="newWorkItemTitle"
+                  type="text"
+                  placeholder="Work item name..."
+                  class="flex-1 rounded-lg px-3 py-2"
+                  style="background: var(--bg-deep); border: 1px solid var(--border); color: var(--text-primary); font-family: var(--font-display); font-size: 0.85rem;"
+                  @keyup.enter="createAndLink"
+                />
+                <button class="ops-btn" @click="createAndLink" :disabled="!newWorkItemTitle.trim()">
+                  Create & Link
+                </button>
+              </div>
+            </div>
+
+            <!-- Or link to existing -->
+            <div class="ops-panel p-4">
+              <div style="font-family: var(--font-mono); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+                Link to Existing
+              </div>
+              <select
+                class="w-full rounded-lg px-3 py-2 cursor-pointer"
+                style="background: var(--bg-deep); border: 1px solid var(--border); color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.75rem;"
+                @change="linkToWorkItem($event.target.value)"
+              >
+                <option value="">Select work item...</option>
+                <option v-for="wi in workItems" :key="wi.id" :value="wi.id" style="background: var(--bg-panel);">
+                  {{ wi.title }} {{ wi.externalId ? `(${wi.externalId})` : '' }}
+                </option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -86,10 +114,11 @@ import AgentRunBadge from '../components/AgentRunBadge.vue'
 import EventTimeline from '../components/EventTimeline.vue'
 
 const route = useRoute()
-const { get, patch } = useApi()
+const { get, post, patch } = useApi()
 const run = ref(null)
 const runEvents = ref([])
 const workItems = ref([])
+const newWorkItemTitle = ref('')
 
 const sessionFields = computed(() => {
   if (!run.value) return []
@@ -106,6 +135,14 @@ async function load() {
   if (!run.value?.workItemId) {
     workItems.value = await get('/api/work-items') || []
   }
+}
+
+async function createAndLink() {
+  const title = newWorkItemTitle.value.trim()
+  if (!title) return
+  await post(`/api/agent-runs/${route.params.id}/create-and-link`, { title })
+  newWorkItemTitle.value = ''
+  await load()
 }
 
 async function linkToWorkItem(workItemId) {
