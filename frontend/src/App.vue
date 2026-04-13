@@ -30,7 +30,7 @@
       </div>
     </header>
 
-    <main class="max-w-[1400px] mx-auto px-8 py-8">
+    <main class="px-8 py-8">
       <router-view />
     </main>
   </div>

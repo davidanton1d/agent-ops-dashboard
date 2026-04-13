@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@source "../";
 @import 'primeicons/primeicons.css';
 
 :root {
